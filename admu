@@ -1,0 +1,185 @@
+#!/usr/bin/perl -w
+# admu-0.2
+# Copyright 2001-2006 - Dimitris Mandalidis <mandas@users.sourceforge.net>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# 
+
+=head1 NAME
+  
+  admu - mutt addressbook manager
+
+=head1 SYNOPSIS
+
+  admu -s [query-string]  : Search for query string
+  admu -a < file 	  : Add entry read from file
+  admu -v		  : Prints version number
+
+  In .muttrc : set query_command="admu -s %s"
+
+=head1 DESCRIPTION
+
+  When admu is invoked with the '-s string' option, it opens the addressbook
+  and searches for patterns matching your query. On the other hand, when 
+  invoked with the '-a' argument, it reads information from standard input
+  until it finds a line which starts with 'From' and act accordingly (see
+  README for further details).
+
+=head1 RETURN VALUE
+
+  Returns 0 when everything went ok, 1 otherwise.
+
+=head1 ENVIRONMENT
+
+  ADMU		Addressbook location
+
+=head1 SEE ALSO
+
+  mutt(1)
+
+=head1 AUTHOR
+
+  Dimitris Mandalidis <mandas@users.sourceforge.net>
+
+=cut
+
+#####################
+# main()
+use strict;
+use Getopt::Std;
+my (%opts);
+getopts('as:v', \%opts);
+my $book = location();
+open (BOOK, "+>>$book") || die "Couldn't open addressbook : $!\n";
+my $exit_val;
+if ($opts{"s"}) { $exit_val = search() }
+elsif ($opts{"a"}) { $exit_val = add() }
+elsif ($opts{"v"}) { $exit_val = version() }
+else
+{
+	print "Wrong or unspecified option\n";
+	close (BOOK) || die "Couldn't close addressbook : $!\n";
+        exit 1;
+        
+}
+close (BOOK) || die "Couldn't close addressbook : $!\n";
+exit !($exit_val);
+
+#####################
+# Subroutines
+## Determining and setting addressbook location 
+sub location 
+{
+	if (!defined($ENV{"ADMU"})) 
+	{
+		my $home = $ENV{"HOME"};
+		my $book = "$home/addrbook";
+		return $book;
+	}
+	else 
+	{
+		return $ENV{"ADMU"};
+	}
+}			
+
+## Searching
+sub search 
+{
+	my $entries = 0; 
+	seek(BOOK, 0, 0) || die "$!\n";   
+	my $query = $opts{"s"};
+	my $i = 0;
+	my @matched;
+	while (<BOOK>)
+	{
+		if (/$query/i)
+		{
+			$matched[$i] = $_;
+			++$i;
+		}
+	++$entries;	
+	}
+	if ($entries == "0") 
+	{
+		print "addressbook is empty. No reason for search\n";
+		return 0;
+	}
+	else 
+	{
+		print "Searching for '$query'...$entries entries...";
+		if ($i != 0)
+		{
+			print "$i found\n";
+			print "@matched";
+			return 1;
+		}
+		else 
+		{
+			print "not found\n";
+			return 0;
+		}
+	}
+}
+
+## Adding
+sub add 
+{
+	select (BOOK); 
+	my $line;
+	FROM: while (<STDIN>) 
+	{
+		if (/^From: /)
+		{
+			s/^From: //;
+			chomp ($line = $_);
+			$line =~ s/\x22//g;
+			last FROM;
+		}
+	}
+	if ($line !~ /\@/) # probably local 
+	{
+		print STDOUT "I cannot find an e-mail address\n";
+		return 0;
+	}
+	if ($line !~ /<|\(/)	# Just an e-mail address
+	{
+		print "$line\n" || die "$!\n";
+		return 1;
+	}
+	else
+	{
+		my @from_line;
+		($from_line[0], $from_line[1]) = split(/<|\(/, $line);
+		$from_line[1] =~ s/>|\)//;
+		if ($from_line[0] =~ /\@/) # name <e-mail>
+		{
+			print "$from_line[0]\t\t\t\t" || die "$!\n";
+			print "$from_line[1]\n" || die "$!\n";
+			return 1;
+		}
+		else # e-mail (name) 
+		{
+			print "$from_line[1]\t\t\t\t" || die "$!\n";
+			print "$from_line[0]\n" || die "$!\n";
+			return 0;
+		}
+	}
+}
+
+sub version
+{
+	print "0.2\n";
+	return 1;
+}

@@ -1,0 +1,58 @@
+admu version 0.2
+Copyright 2001-2006 - Dimitris Mandalidis <mandas@users.sourceforge.net>
+------------------------------------------------------------------------------
+TABLE OF CONTENTS
+
+1. INTRODUCTION
+2. INSTALL
+3. USAGE
+    3.1. ADD
+    3.2. SEARCH
+4. CREDITS
+------------------------------------------------------------------------------
+
+1. INTRODUCTION
+
+Admu is a very simple addressbook manager written in Perl. 
+Although mutt can store e-mail addresses and names in an alias file, I prefer
+keeping my address book in an MUA-independent format. This manager -although is
+written especially for mutt- can be used with other MUAs with success (pine,
+elm, etc) because it works only with command line arguments. 
+
+2. INSTALL
+
+Just follow the steps bellow :
+
+STEP 1 : gzip -dc admu-0.2.tar.gz | tar xf - (among others)
+STEP 2 : cd admu-0.2
+STEP 3 : cp admu /usr/local/bin
+STEP 4 : In .muttrc (or Muttrc) : set query command="admu -s %s"
+
+There is one more optional step; You can set ADMU environment variable which
+points to your address book e.g. export ADMU="/home/dm/addressbook". Otherwise 
+admu will 'select' as addressbook location the path $HOME/addrbook.
+
+3. USAGE
+3.1 ADD
+
+By specifying the '-a' argument, admu reads from standard input until it finds a
+line which starts with 'From'. Then it tries to identify the line format and
+finally stores two fields in your address book; an e-mail and a nickname (or
+real name) separated by tabs. Instead of this, you can pipe a message from mutt
+to admu -a ('|') and it will take care of this.
+
+3.2 SEARCH
+
+By specifying the '-s' argument followed by a string, admu will open your
+address book searching for the string you queried it. Then it will store the
+results (if any) in an array, it will print a status message and finally the
+results (if any). Again instead of this you can press 'Q' inside the compose
+menu of mutt, and admu will take care of this for you :-)
+
+4. CREDITS
+
+Many thanks to Lucas Maneos, who helped me a lot with suggestions 
+(among other topics).
+Furthermore if you have a pilot or palmtop, go grab Lucas's script from
+<URL:http://www.maneos.org/software/mpadq>; a (pilot|palmtop|palm) addressbook
+query.

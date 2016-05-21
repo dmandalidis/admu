@@ -1,0 +1,10 @@
+0.2 :
+
+- pod format included in the script instead of a separate troff doc.
+- more readable code :-) (yes, I read perlstyle(1)).
+- more proper exit codes.
+- just one open() call and just one close().
+- catching an exception when &main::add tries to write to a full partition/a
+  unreachable host etc.
+- &main::search now counts matching and addressbook entries.
+- now uses a default location for address book, if $ENV{"ADMU"} is not set.
